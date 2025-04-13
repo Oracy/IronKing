@@ -6,4 +6,48 @@
 
 .card {
     margin-top: 2rem;
+}
+
+/* Estilos para os status */
+.status-box {
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+}
+
+.status-connected {
+    background-color: #48c774;
+    color: white;
+}
+
+.status-disconnected {
+    background-color: #f14668;
+    color: white;
+}
+
+.status-error {
+    background-color: #ffdd57;
+    color: rgba(0, 0, 0, 0.7);
+}
+
+/* Animação de loading */
+.is-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.is-loading:after {
+    animation: spinAround 500ms infinite linear;
+    border: 2px solid #dbdbdb;
+    border-radius: 50%;
+    border-right-color: transparent;
+    border-top-color: transparent;
+    content: "";
+    display: block;
+    height: 1em;
+    width: 1em;
+    position: absolute;
+    left: calc(50% - (1em / 2));
+    top: calc(50% - (1em / 2));
 } 

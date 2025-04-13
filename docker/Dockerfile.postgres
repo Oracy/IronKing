@@ -1,0 +1,18 @@
+FROM postgres:16-alpine
+
+# Instalação de ferramentas úteis
+RUN apk add --no-cache \
+    tzdata \
+    && rm -rf /var/cache/apk/*
+
+# Configuração do timezone
+ENV TZ=America/Sao_Paulo
+
+# Criação do diretório para scripts de inicialização
+RUN mkdir -p /docker-entrypoint-initdb.d
+
+# Copia scripts de inicialização (se necessário)
+# COPY ./init-scripts/*.sql /docker-entrypoint-initdb.d/
+
+# Exposição da porta padrão do PostgreSQL
+EXPOSE 5432 

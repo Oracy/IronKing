@@ -5,16 +5,74 @@
     <div class="column is-half">
         <div class="card">
             <div class="card-content">
-                <div class="content" x-data="{ message: 'Bem-vindo ao IronKing Ranking!' }">
+                <div class="content" x-data="{ 
+                    message: 'Bem-vindo ao IronKing!',
+                    dbStatus: null,
+                    dbVersion: null,
+                    isLoading: false,
+                    checkDbStatus() {
+                        this.isLoading = true;
+                        fetch('/api/db-status')
+                            .then(response => response.json())
+                            .then(data => {
+                                this.dbStatus = data;
+                                if (data.status === 'connected') {
+                                    this.dbVersion = data.version;
+                                }
+                            })
+                            .catch(error => {
+                                this.dbStatus = {
+                                    status: 'error',
+                                    message: 'Erro ao verificar o status do banco de dados'
+                                };
+                            })
+                            .finally(() => {
+                                this.isLoading = false;
+                            });
+                    }
+                }">
                     <h1 class="title has-text-centered" x-text="message"></h1>
-                    <div class="has-text-centered mt-4">
-                        <button class="button is-primary"
-                                hx-get="/api/health"
-                                hx-trigger="click"
-                                hx-target="#status">
-                            Verificar Status
-                        </button>
-                        <div id="status" class="mt-3"></div>
+                    
+                    <!-- Status do Banco de Dados -->
+                    <div class="box mt-4">
+                        <h2 class="subtitle">Status do Banco de Dados</h2>
+                        <div class="buttons">
+                            <button class="button is-primary"
+                                    @click="checkDbStatus()"
+                                    :class="{'is-loading': isLoading}">
+                                Verificar Conexão
+                            </button>
+                        </div>
+                        
+                        <div x-show="dbStatus" class="mt-4">
+                            <div x-show="dbStatus.status === 'connected'" class="notification is-success">
+                                <p x-text="dbStatus.message"></p>
+                                <p class="mt-2" x-show="dbVersion">
+                                    <strong>Versão do PostgreSQL:</strong>
+                                    <span x-text="dbVersion"></span>
+                                </p>
+                            </div>
+                            <div x-show="dbStatus.status === 'disconnected'" class="notification is-danger">
+                                <p x-text="dbStatus.message"></p>
+                            </div>
+                            <div x-show="dbStatus.status === 'error'" class="notification is-warning">
+                                <p x-text="dbStatus.message"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status da API -->
+                    <div class="box mt-4">
+                        <h2 class="subtitle">Status da API</h2>
+                        <div class="buttons">
+                            <button class="button is-info"
+                                    hx-get="/api/health"
+                                    hx-trigger="click"
+                                    hx-target="#api-status">
+                                Verificar Status
+                            </button>
+                        </div>
+                        <div id="api-status" class="mt-3"></div>
                     </div>
                 </div>
             </div>
