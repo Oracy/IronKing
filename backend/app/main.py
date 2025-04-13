@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
-app = FastAPI(title="IronKing Ranking")
+app = FastAPI(title="IronKing")
 
 # Configuração de diretórios
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -18,7 +18,7 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 async def home(request: Request):
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "title": "IronKing Ranking"}
+        {"request": request, "title": "IronKing"}
     )
 
 @app.get("/api/health")
