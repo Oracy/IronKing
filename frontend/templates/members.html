@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="title">Membros da Academia</h1>
+    
+    <!-- Filtros -->
+    <div class="box">
+        <div class="field is-grouped">
+            <div class="control">
+                <label class="checkbox">
+                    <input type="checkbox" id="onlyPersonal" name="onlyPersonal" hx-get="/api/w12/members" 
+                           hx-trigger="change" hx-target="#members-table"
+                           hx-include="[name='take'], [name='skip'], [name='showActivityData']">
+                    Apenas Personal Trainers
+                </label>
+            </div>
+            <div class="control">
+                <label class="checkbox">
+                    <input type="checkbox" id="showActivityData" name="showActivityData"
+                           hx-get="/api/w12/members" hx-trigger="change" 
+                           hx-target="#members-table"
+                           hx-include="[name='take'], [name='skip'], [name='onlyPersonal']">
+                    Mostrar Dados de Atividade
+                </label>
+            </div>
+            <div class="control">
+                <div class="select">
+                    <select name="take" hx-get="/api/w12/members" hx-trigger="change" hx-target="#members-table"
+                            hx-include="[name='skip'], [name='onlyPersonal'], [name='showActivityData']">
+                        <option value="10">10 itens</option>
+                        <option value="20">20 itens</option>
+                        <option value="50">50 itens</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Membros -->
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Telefone</th>
+                    <th>Status</th>
+                    <th>Tipo</th>
+                </tr>
+            </thead>
+            <tbody id="members-table" hx-get="/api/w12/members" hx-trigger="load">
+                <!-- Os dados serão carregados aqui via HTMX -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginação -->
+    <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+        <button class="pagination-previous" 
+                hx-get="/api/w12/members"
+                hx-target="#members-table"
+                hx-include="[name='take'], [name='onlyPersonal'], [name='showActivityData']"
+                hx-vals='js:{"skip": Math.max(0, parseInt(document.querySelector("#members-table").dataset.skip || 0) - parseInt(document.querySelector("select[name=take]").value || 10))}'
+                disabled>
+            Anterior
+        </button>
+        <button class="pagination-next"
+                hx-get="/api/w12/members"
+                hx-target="#members-table"
+                hx-include="[name='take'], [name='onlyPersonal'], [name='showActivityData']"
+                hx-vals='js:{"skip": parseInt(document.querySelector("#members-table").dataset.skip || 0) + parseInt(document.querySelector("select[name=take]").value || 10)}'
+                disabled>
+            Próxima
+        </button>
+    </nav>
+</div>
+
+<script>
+    document.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.successful) {
+            try {
+                const data = JSON.parse(evt.detail.xhr.response);
+                const tbody = document.getElementById('members-table');
+                tbody.innerHTML = ''; // Limpa a tabela
+
+                if (!data || !Array.isArray(data)) {
+                    throw new Error('Invalid data format received from server');
+                }
+
+                // Store current skip value in dataset
+                tbody.dataset.skip = parseInt(evt.detail.requestConfig.parameters.skip) || 0;
+
+                if (data.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td colspan="6" class="has-text-centered">Nenhum membro encontrado</td>';
+                    tbody.appendChild(row);
+                    return;
+                }
+
+                data.forEach(member => {
+                    if (!member) return; // Skip invalid members
+                    
+                    // Find email and phone from contacts array
+                    const email = member.contacts?.find(c => c.contactType === 'E-mail')?.description || '-';
+                    const phone = member.contacts?.find(c => c.contactType === 'Cellphone')?.description || '-';
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${member.idMember || '-'}</td>
+                        <td>${(member.firstName + ' ' + (member.lastName || '')).trim() || '-'}</td>
+                        <td>${email}</td>
+                        <td>${phone}</td>
+                        <td><span class="tag ${member.status === 'Active' ? 'is-success' : 'is-danger'}">${member.status || '-'}</span></td>
+                        <td>${member.personalTrainer ? 'Personal Trainer' : 'Aluno'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // Update pagination buttons state
+                const prevButton = document.querySelector('.pagination-previous');
+                const nextButton = document.querySelector('.pagination-next');
+                const take = parseInt(document.querySelector('select[name=take]').value) || 10;
+                
+                prevButton.disabled = tbody.dataset.skip <= 0;
+                nextButton.disabled = data.length < take;
+
+            } catch (error) {
+                console.error('Error processing members data:', error);
+                const tbody = document.getElementById('members-table');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="has-text-centered has-text-danger">
+                            Erro ao processar dados dos membros: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        } else {
+            const tbody = document.getElementById('members-table');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="has-text-centered has-text-danger">
+                        Erro ao carregar dados dos membros. Por favor, tente novamente.
+                    </td>
+                </tr>
+            `;
+        }
+    });
+</script>
+{% endblock %} 
